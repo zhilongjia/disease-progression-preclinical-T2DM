@@ -55,10 +55,6 @@ for (i in 1:length(expos)) {
   # extract exposure data, warning, allele as T should not be read as TRUE
   expo_clamped <- read.csv(sprintf('exposure/t2dm_rm_confounder/%s_expo_rm_confounder.csv',
                                    expo_filenames[i]), tryLogical = F)
-  
-  # outcome data: phenotypes
-
-  j <- 22
   # diseases
   for (j in 1:length(outcomes)) {
     print(sprintf('%d: analying %s on %s', i, expos[i], outcomes[j]))
@@ -89,6 +85,8 @@ for (i in 1:length(expos)) {
       log_pval = F,
     ))
     
+    # read top snps for the disease
+    df_top_snps <- read.csv(sprintf('data/gwas_summary/disease/tophits/%s_top.csv', bd))
     
     # No. SNPs find in both exposure data and outcome data
     if (is.null(pheno)|| ("try-error" %in% class(pheno))) {
@@ -105,6 +103,15 @@ for (i in 1:length(expos)) {
       outcome_dat = pheno,
       action = 2
     )
+    
+    # check if SNP is in top hits
+    snp_in_top <- subset.data.frame(dat, SNP %in% df_top_snps$SNP)
+    
+    # remove snps in the top hits
+    dat <- dat[!dat$SNP %in% df_top_snps$SNP,]
+    # save
+    write.csv(dat, sprintf('results/t2dm_disease/mr_data/SNP_%s_%s_for_MR.csv', expos[i], outcomes[j]), row.names = F)
+    write.csv(snp_in_top, sprintf('results/t2dm_disease/mr_data/%s_%s_inter.csv', expos[i], outcomes[j]), row.names = F)
     
     # mr analysis
     mr_analysis <- mr_full_test(dat, expos[i], outcomes[j], presso_test = F)

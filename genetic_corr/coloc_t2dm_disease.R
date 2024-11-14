@@ -34,7 +34,7 @@ coloc_res_path <- 'coloc_results/t2dm_disease.csv'
 if (file_exists(coloc_res_path)) {
   coloc_results <- read.csv(coloc_res_path)
 } else {
-  coloc_results <- read.csv('coloc_results/coloc_example.csv')
+  coloc_results <- read.csv('results/coloc_results/coloc_example.csv')
 }
 
 
@@ -99,7 +99,7 @@ for (i in 1:length(pheno_x)) {
       print(paste0('No SNPs with PP.H4 >= 0.75 for ', x, ' and ', y))
     }
     # save results
-    write.csv(coloc_results, 'coloc_results/t2dm_disease.csv', row.names = F)
+    write.csv(coloc_results, 'results/coloc_results/t2dm_disease.csv', row.names = F)
   }
 }
 
