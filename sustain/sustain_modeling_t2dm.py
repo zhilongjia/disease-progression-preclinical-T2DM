@@ -64,7 +64,13 @@ def main(args):
 
     # setup z_vals and z_max
     z_max = np.quantile(data, 0.95, axis=0)
-    z_vals = np.array([[1, 2]] * data.shape[1])
+
+    # z_vals for each SuStaInLabels from 0 to z_max, num_zvals breakpoints
+    z_vals = []
+    for i in range(len(SuStaInLabels)):
+        z_vals.append(np.linspace(0, z_max[i], num_zvals + 2)[1:num_zvals + 1])
+    z_vals = np.array(z_vals)
+
     print('use_parallel_startpoints:', args.parallel_startpoints)
 
     print(z_vals.shape)
@@ -95,7 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('--N_S_max', type=int, default=5, help='Maximum number of subtypes')
     parser.add_argument('--N_iterations_MCMC', type=int, default=int(1e5),
                         help='Number of iterations for MCMC')
-    # num_zvals = 3
+    # num_zvals for each biomarker
     parser.add_argument('--num_zvals', type=int, default=2, help='Number of z values for each biomarker')
     parser.add_argument('--parallel_startpoints', action="store_false",
                         help='Whether or not to parallelize the maximum likelihood loop')

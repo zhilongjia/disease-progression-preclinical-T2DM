@@ -6,7 +6,6 @@ from utils import zscore_regressed_out_covariates, biomarker_selection, normaliz
 import argparse
 from sklearn.model_selection import StratifiedKFold
 
-
 def main(args):
     # top biomarkers
     # num_biomarkers = args.num_biomarkers
@@ -22,7 +21,7 @@ def main(args):
     if len(biomarkers) == 0:
         print(f"No biomarkers selected for threshold {thres}")
         return
-
+    run_fold = args.fd
     # Parameters
     N_startpoints = args.N_startpoints
     N_S_max = args.N_S_max
@@ -34,7 +33,7 @@ def main(args):
           f"Number of controls: {len(df_data[df_data['t2dm'] == 0])}")
 
     # create an output path
-    output_path = os.path.join(f'results', f't2dm_{dm_type}_thres{thres}')
+    output_path = os.path.join(f'results', f't2dm_{dm_type}_thres{thres}_cv')
     os.makedirs(output_path, exist_ok=True)
 
     SuStaInLabels = biomarkers
@@ -66,7 +65,14 @@ def main(args):
     # setup z_vals and z_max
     z_max = np.quantile(data, 0.95, axis=0)
 
-    z_vals = np.array([[1, 2]] * data.shape[1])
+    # z_vals for each SuStaInLabels from 0 to z_max, 3 breakpoints, shape (len(SuStaInLabels), 3)
+    z_vals = []
+    for i in range(len(SuStaInLabels)):
+        z_vals.append(np.linspace(0, z_max[i], num_zvals + 2)[1:num_zvals + 1])
+    z_vals = np.array(z_vals)
+
+    # z_max = np.array([5] * data.shape[1])
+    # z_vals = np.array([[1, 2, 3]] * data.shape[1])
     print('use_parallel_startpoints:', args.parallel_startpoints)
 
     print(z_vals.shape)
@@ -97,7 +103,10 @@ def main(args):
 
     print(test_idxs.shape)
     # run cross validation
-    sustain_input.cross_validate_sustain_model(test_idxs=test_idxs)
+    if run_fold == -1:
+        sustain_input.cross_validate_sustain_model(test_idxs=test_idxs)
+    else:
+        sustain_input.cross_validate_sustain_model(test_idxs=test_idxs, select_fold=run_fold)
 
 
 if __name__ == '__main__':
@@ -107,11 +116,13 @@ if __name__ == '__main__':
     parser.add_argument('--num_biomarkers', type=int, default=10, help='Number of biomarkers to select')
     parser.add_argument('--N_startpoints', type=int, default=25, help='Number of startpoints')
     parser.add_argument('--N_S_max', type=int, default=5, help='Maximum number of subtypes')
-    parser.add_argument('--N_iterations_MCMC', type=int, default=int(1e5),
+    parser.add_argument('--N_iterations_MCMC', type=int, default=int(10),
                         help='Number of iterations for MCMC')
     # num_zvals = 3
     parser.add_argument('--num_zvals', type=int, default=2, help='Number of z values for each biomarker')
     parser.add_argument('--parallel_startpoints', action="store_false",
                         help='Whether or not to parallelize the maximum likelihood loop')
+    # run fold, if -1, run all folds, default -1, use this arg to make fold run at the same time
+    parser.add_argument('--fd', type=int, default=-1, help='The fold to run')
     args = parser.parse_args()
     main(args)
